@@ -1,8 +1,11 @@
 from pong import PongEnvironment
 import pygame
+import yaml
 
 if __name__ == "__main__":
-    env = PongEnvironment()
+    with open('agents.yaml', 'r') as file:
+        stream = yaml.safe_load(file)
+    env = PongEnvironment(stream['agent'])
 
     terminated = False
     while not terminated:

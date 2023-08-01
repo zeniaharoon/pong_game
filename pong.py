@@ -1,12 +1,20 @@
 import pygame
 import sys
 import random
+import yaml
 
+sys.path.append('agents')
+from hardAgent import HardAgent
+from easyAgent import EasyAgent
+from medAgent import MediumAgent
 from imposAgent import ImpossibleAgent
+hard = HardAgent()
+easy = EasyAgent()
+med = MediumAgent()
 impos = ImpossibleAgent()
 
 class PongEnvironment:
-    def __init__(self):
+    def __init__(self, agent):
         pygame.init()
         self.WIDTH, self.HEIGHT = 1280, 720
         self.FONT = pygame.font.SysFont("Consolas", int(self.WIDTH / 20))
@@ -27,6 +35,8 @@ class PongEnvironment:
 
         self.x_speed, self.y_speed = 1, 1
         self.player_score, self.opponent_score = 0, 0
+
+        self.agent = agent
 
     def reset_ball(self):
         self.ball.center = (self.WIDTH / 2, self.HEIGHT / 2)
@@ -54,11 +64,37 @@ class PongEnvironment:
             self.player.y += 5
 
     def agent_action(self):
-        ai_action = impos.get_action((self.ball.centery, self.ai.centery))
-        if ai_action == "UP":
-            self.ai.y -= 5
-        elif ai_action == "DOWN":
-            self.ai.y += 5
+        
+        if self.agent == "easy":
+            ai_action = easy.get_action(self.ball.centery, self.ai.centery)
+            if ai_action == "UP":
+                self.ai.y -= easy.speed
+            elif ai_action == "DOWN":
+                self.ai.y += easy.speed
+
+        elif self.agent == "med":
+            ai_action = med.get_action(self.ball.centery, self.ai.centery)
+            if ai_action == "UP":
+                self.ai.y -= med.speed
+            elif ai_action == "DOWN":
+                self.ai.y += med.speed
+
+        elif self.agent == "hard":
+            ai_action = hard.get_action(self.ball.centery, self.ai.centery)
+            if ai_action == "UP":
+                self.ai.y -= hard.speed
+            elif ai_action == "DOWN":
+                self.ai.y += hard.speed
+
+        elif self.agent == "impos":
+            ai_action = impos.get_action(self.ball.centery, self.ai.centery)
+            if ai_action == "UP":
+                self.ai.y -= impos.speed
+            elif ai_action == "DOWN":
+                self.ai.y += impos.speed
+        
+
+        
 
     def update_ball(self):
         self.ball.x += self.x_speed * 5
