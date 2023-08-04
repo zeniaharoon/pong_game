@@ -10,11 +10,11 @@ if __name__ == "__main__":
     check_env(env)
 
     # Set up model
-    #model = sb3.PPO("MultiInputPolicy", env, verbose=1)
-    #model.learn(total_timesteps=250000)
-    #model.save("ppo_pong")
+    model = sb3.PPO("MultiInputPolicy", env, verbose=1)
+    model.learn(total_timesteps=250000)
+    model.save("ppo_pong")
 
-    #del model
+    del model
     #Load and evaluate agent
     model = sb3.PPO.load("brians_pongAI")
     obs = env.reset()

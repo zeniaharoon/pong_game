@@ -2,8 +2,8 @@ import pygame
 import sys
 import random
 import yaml
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 import numpy as np
 
 from agents.hardAgent import HardAgent
@@ -61,12 +61,12 @@ class PongEnvironment(gym.Env):
         }
 
 
-    def reset(self):
+    def reset(self, seed=None):
         self.reset_ball()
         self.player.center = (100, self.HEIGHT / 2)
         self.ai.center = (self.WIDTH - 100, self.HEIGHT / 2)
         self.player_score, self.opponent_score = 0, 0
-        return self._get_obs()
+        return self._get_obs(), {}
 
     def reset_ball(self):
         self.ball.center = (self.WIDTH / 2, self.HEIGHT / 2)
@@ -89,7 +89,7 @@ class PongEnvironment(gym.Env):
         observation = self._get_obs()
         done = True if self.player_score >= 20 or self.opponent_score >= 20 else False
     
-        return observation, reward, done, {}
+        return observation, reward, done, False, {}
 
     def handle_events(self):
         for event in pygame.event.get():
