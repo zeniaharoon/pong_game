@@ -1,16 +1,28 @@
-from pong import PongEnvironment
-import pygame
+from envs.pong import PongEnvironment
 import yaml
+import stable_baselines3 as sb3
+from stable_baselines3.common.env_checker import check_env
 
 if __name__ == "__main__":
-    with open('agents.yaml', 'r') as file:
+    with open('config/agents.yaml', 'r') as file:
         stream = yaml.safe_load(file)
     env = PongEnvironment(stream['agent'])
+    check_env(env)
 
-    terminated = False
-    while not terminated:
-        action = pygame.key.get_pressed()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminated = True
-        env.step(action)
+    # Set up model
+    #model = sb3.PPO("MultiInputPolicy", env, verbose=1)
+    #model.learn(total_timesteps=250000)
+    #model.save("ppo_pong")
+
+    #del model
+    #Load and evaluate agent
+    model = sb3.PPO.load("brians_pongAI")
+    obs = env.reset()
+
+    done = False
+    while not done:
+        action, _ = model.predict(obs)
+        obs, reward, done, info = env.step(action)
+        env.render()
+
+    env.close()
