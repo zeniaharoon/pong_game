@@ -2,19 +2,21 @@ import pygame
 import sys
 import random
 import yaml
+import gym
+from gym import spaces
+import numpy as np
 
-sys.path.append('agents')
-from hardAgent import HardAgent
-from easyAgent import EasyAgent
-from medAgent import MediumAgent
-from imposAgent import ImpossibleAgent
+from agents.hardAgent import HardAgent
+from agents.easyAgent import EasyAgent
+from agents.medAgent import MediumAgent
+from agents.imposAgent import ImpossibleAgent
 hard = HardAgent()
 easy = EasyAgent()
 med = MediumAgent()
 impos = ImpossibleAgent()
 
-class PongEnvironment:
-    def __init__(self, agent):
+class PongEnvironment(gym.Env):
+    def __init__(self, agent, score_limit=20, render_mode="human"):
         pygame.init()
         self.WIDTH, self.HEIGHT = 1280, 720
         self.FONT = pygame.font.SysFont("Consolas", int(self.WIDTH / 20))
@@ -38,18 +40,56 @@ class PongEnvironment:
 
         self.agent = agent
 
+        
+        # ---------------------------------------------------------
+        # Set Gym fields
+        # ---------------------------------------------------------
+        self.observation_space = spaces.Dict(
+            {
+                'ball_y': spaces.Box(0, self.HEIGHT, shape=(1,), dtype=float),
+                "player_y": spaces.Box(0, self.HEIGHT, shape=(1,), dtype=float)
+            }
+        )
+
+        self.action_space = spaces.Discrete(3)
+        self.render_mode = render_mode
+
+    def _get_obs(self):
+        return {
+            'ball_y': np.array([self.ball.centery]),
+            'player_y': np.array([self.player.centery])
+        }
+
+
+    def reset(self):
+        self.reset_ball()
+        self.player.center = (100, self.HEIGHT / 2)
+        self.ai.center = (self.WIDTH - 100, self.HEIGHT / 2)
+        self.player_score, self.opponent_score = 0, 0
+        return self._get_obs()
+
     def reset_ball(self):
         self.ball.center = (self.WIDTH / 2, self.HEIGHT / 2)
         self.x_speed, self.y_speed = random.choice([1, -1]), random.choice([1, -1])
 
     def step(self, action):
         self.handle_events()
-        self.update_paddle(action)
+        if action == 1:
+            self.player.y -= 5
+        elif action == 2:
+            self.player.y += 5
+        #self.update_paddle(action)
         self.agent_action()
         self.update_ball()
-        self.check_ball_collision()
+        reward = self.check_ball_collision()
         self.check_paddle_collision()
-        self.draw_screen()
+        if self.render_mode == "human":
+            self.render()
+
+        observation = self._get_obs()
+        done = True if self.player_score >= 20 or self.opponent_score >= 20 else False
+    
+        return observation, reward, done, {}
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -93,31 +133,42 @@ class PongEnvironment:
             elif ai_action == "DOWN":
                 self.ai.y += impos.speed
         
-
-        
-
     def update_ball(self):
-        self.ball.x += self.x_speed * 5
-        self.ball.y += self.y_speed * 5
+        self.ball.x += self.x_speed * 7
+        self.ball.y += self.y_speed * 7
     
     def check_ball_collision(self):
+        """Compute ball collisions and return the reward
+
+        Returns:
+            float: reward signal for agent
+        """
+        reward = 0
         if self.ball.top <= 0 or self.ball.bottom >= self.HEIGHT:
             self.y_speed = -self.y_speed
-        if self.ball.colliderect(self.player) or self.ball.colliderect(self.ai):
+        if self.ball.colliderect(self.player):
             self.x_speed = -self.x_speed
+            reward += 0.25
+        if self.ball.colliderect(self.ai):
+            self.x_speed = -self.x_speed
+            reward -= 0.01
         if self.ball.x <= 0:
             self.opponent_score += 1
+            reward -= 1
             self.reset_ball()
 
         if self.ball.x >= self.WIDTH:
             self.player_score += 1
+            reward += 1
             self.reset_ball()
+
+        return reward
 
     def check_paddle_collision(self):
         self.player.y = min(max(self.player.y, 0), self.HEIGHT - self.player.height)
         self.ai.y = min(max(self.ai.y, 0), self.HEIGHT - self.ai.height)
 
-    def draw_screen(self):
+    def render(self):
         self.SCREEN.fill("Black")
         pygame.draw.rect(self.SCREEN, "red", self.player)
         pygame.draw.rect(self.SCREEN, "blue", self.ai)
@@ -133,6 +184,10 @@ class PongEnvironment:
         pygame.display.flip()
         pygame.display.update()
         self.CLOCK.tick(300)
+    
+    def close():
+        pygame.quit()
+
 
 
 
