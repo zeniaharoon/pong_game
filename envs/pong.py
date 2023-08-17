@@ -185,7 +185,7 @@ class PongEnvironment(gym.Env):
         pygame.display.update()
         self.CLOCK.tick(300)
     
-    def close():
+    def close(self):
         pygame.quit()
 
 
